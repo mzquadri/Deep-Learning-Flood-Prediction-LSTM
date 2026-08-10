@@ -1,6 +1,10 @@
 # Deep Learning Flood Prediction with LSTM
 
-LSTM-based deep learning experiment for one-step-ahead river-discharge prediction using PyTorch. The model learns temporal patterns from a deterministic synthetic hydrological time series (precipitation, temperature, and soil moisture).
+Forecasting river discharge is one of those problems where the physics is well understood but the computation is expensive. This project explores the deep-learning shortcut: train an LSTM to read the last 30 days of precipitation, temperature, and soil moisture, and predict tomorrow's discharge in a single forward pass.
+
+The catchment here is synthetic — a deterministic rainfall-runoff generator written for this repo — which makes the whole experiment reproducible end to end on any machine. The pipeline, not the catchment, is the point.
+
+![Pipeline overview](docs/diagrams/pipeline.svg)
 
 > **Scope:** This repository is a reproducible synthetic-data demonstration, not a validated flood-forecasting system. The reported metrics and figures describe the generated benchmark only and must not be interpreted as real-catchment performance.
 
@@ -64,6 +68,7 @@ LSTM-based deep learning experiment for one-step-ahead river-discharge predictio
 │   ├── flood_detection_metrics.json
 │   ├── scalers/                 # Fitted StandardScalers
 │   └── figures/                 # All generated plots
+├── docs/diagrams/               # SVG pipeline diagram
 ├── requirements.txt
 └── README.md
 ```
