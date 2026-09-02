@@ -34,6 +34,7 @@ def train_model(
     max_epochs: int = 100,
     patience: int = 15,
     device: str = None,
+    seed: int = 42,
 ):
     """
     Train the FloodLSTM model and save results.
@@ -62,10 +63,22 @@ def train_model(
         Early stopping patience.
     device : str
         'cuda' or 'cpu'. Auto-detected if None.
+    seed : int
+        Random seed, matching the default in generate_data.py. Two things here draw on
+        the global RNG: LSTM weight initialisation, and the shuffling of the training
+        DataLoader. Without a seed the same command produces a different model each run,
+        so the reported RMSE could not be reproduced from the repository alone.
     """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
+
+    # Seed before anything constructs a tensor or a loader.
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    print(f"Seed: {seed}")
 
     os.makedirs(output_dir, exist_ok=True)
     scaler_dir = os.path.join(output_dir, "scalers")
