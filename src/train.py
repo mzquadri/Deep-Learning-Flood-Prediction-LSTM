@@ -33,7 +33,7 @@ def train_model(
     batch_size: int = 64,
     max_epochs: int = 100,
     patience: int = 15,
-    device: str = None,
+    device: str | None = None,
     seed: int = 42,
 ):
     """
@@ -61,7 +61,7 @@ def train_model(
         Maximum training epochs.
     patience : int
         Early stopping patience.
-    device : str
+    device : str, optional
         'cuda' or 'cpu'. Auto-detected if None.
     seed : int
         Random seed, matching the default in generate_data.py. Two things here draw on
@@ -201,6 +201,9 @@ def train_model(
         "best_val_loss": float(best_val_loss),
         "total_training_time_s": round(total_time, 1),
         "device": device,
+        # Recorded because it is what makes the rest of this file reproducible. A saved
+        # hyperparameter set that omits the seed describes a run nobody can repeat.
+        "seed": seed,
         "n_parameters": model.count_parameters(),
     }
     with open(os.path.join(output_dir, "hyperparameters.json"), "w") as f:

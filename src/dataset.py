@@ -60,7 +60,7 @@ def load_and_split(
     train_frac: float = 0.7,
     val_frac: float = 0.15,
     batch_size: int = 64,
-    scaler_dir: str = None,
+    scaler_dir: str | None = None,
 ) -> Tuple[DataLoader, DataLoader, DataLoader, Dict]:
     """
     Load CSV, normalize, create sequences, and return DataLoaders.

@@ -20,7 +20,7 @@ import os
 def generate_hydrological_data(
     n_years: int = 20,
     seed: int = 42,
-    save_path: str = None,
+    save_path: str | None = None,
 ) -> pd.DataFrame:
     """
     Generate synthetic daily hydrological time series.

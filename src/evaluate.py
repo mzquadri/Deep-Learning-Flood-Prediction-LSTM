@@ -30,7 +30,7 @@ from dataset import load_and_split, FEATURE_COLS, TARGET_COL
 def evaluate_model(
     csv_path: str,
     results_dir: str = "../results",
-    device: str = None,
+    device: str | None = None,
 ):
     """
     Load trained model, evaluate on test set, and generate all plots.
