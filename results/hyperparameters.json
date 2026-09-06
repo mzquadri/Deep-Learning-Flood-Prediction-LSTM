@@ -7,9 +7,10 @@
   "batch_size": 64,
   "max_epochs": 100,
   "patience": 15,
-  "best_epoch": 12,
-  "best_val_loss": 0.09097430131891195,
-  "total_training_time_s": 382.8,
-  "device": "cuda",
+  "best_epoch": 41,
+  "best_val_loss": 0.07142043179448913,
+  "total_training_time_s": 136.5,
+  "device": "cpu",
+  "seed": 42,
   "n_parameters": 208513
 }

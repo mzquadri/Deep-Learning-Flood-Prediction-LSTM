@@ -1,0 +1,135 @@
+{
+  "environment": {
+    "generated_utc": "2026-09-06T09:46:38Z",
+    "torch": "2.11.0+xpu"
+  },
+  "data": {
+    "days": 7300,
+    "years": 20,
+    "seed": 42,
+    "features": [
+      "precipitation_mm",
+      "temperature_c",
+      "soil_moisture_pct"
+    ],
+    "target": "discharge_m3s",
+    "soil_moisture_at_floor_fraction": 0.1259
+  },
+  "split": {
+    "strategy": "chronological",
+    "train": 5110,
+    "val": 1095,
+    "test": 1095,
+    "window": 30,
+    "scored_rows": 1065
+  },
+  "model": {
+    "architecture": "2-layer LSTM, 128 hidden, dense head",
+    "parameters": 208513,
+    "best_epoch": 41,
+    "seed": 42
+  },
+  "variance_share": {
+    "baseflow": 0.173,
+    "quickflow": 0.0552,
+    "snowmelt": 0.3243,
+    "noise": 0.0309
+  },
+  "seasonal_combined_share": 0.7724,
+  "noise_ceiling_r2": 0.9691,
+  "test_metrics": {
+    "lstm": {
+      "rmse": 2.4158,
+      "mae": 1.7408,
+      "r2": 0.9213,
+      "nse": 0.9213,
+      "pbias_percent": 1.8145,
+      "n": 1065
+    },
+    "linear_regression": {
+      "rmse": 4.7079,
+      "mae": 3.5942,
+      "r2": 0.701,
+      "nse": 0.701,
+      "pbias_percent": 1.3706,
+      "n": 1065
+    },
+    "climatology": {
+      "rmse": 2.6878,
+      "mae": 1.9124,
+      "r2": 0.9025,
+      "nse": 0.9025,
+      "pbias_percent": -0.7944,
+      "n": 1065
+    },
+    "train_mean": {
+      "rmse": 8.6144,
+      "mae": 6.764,
+      "r2": -0.0012,
+      "nse": -0.0012,
+      "pbias_percent": -1.549,
+      "n": 1065
+    },
+    "persistence": {
+      "rmse": 2.7007,
+      "mae": 2.0663,
+      "r2": 0.9016,
+      "nse": 0.9016,
+      "pbias_percent": -0.0064,
+      "n": 1065
+    }
+  },
+  "event_detection": {
+    "lstm": {
+      "threshold_m3s": 37.214,
+      "true_positives": 37,
+      "false_positives": 9,
+      "false_negatives": 17,
+      "true_negatives": 1002,
+      "precision": 0.8043,
+      "recall": 0.6852,
+      "f1": 0.74,
+      "events": 54
+    },
+    "linear_regression": {
+      "threshold_m3s": 37.214,
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 52,
+      "true_negatives": 1011,
+      "precision": 1.0,
+      "recall": 0.037,
+      "f1": 0.0714,
+      "events": 54
+    },
+    "climatology": {
+      "threshold_m3s": 37.214,
+      "true_positives": 21,
+      "false_positives": 9,
+      "false_negatives": 33,
+      "true_negatives": 1002,
+      "precision": 0.7,
+      "recall": 0.3889,
+      "f1": 0.5,
+      "events": 54
+    },
+    "persistence": {
+      "threshold_m3s": 37.214,
+      "true_positives": 40,
+      "false_positives": 14,
+      "false_negatives": 14,
+      "true_negatives": 997,
+      "precision": 0.7407,
+      "recall": 0.7407,
+      "f1": 0.7407,
+      "events": 54
+    }
+  },
+  "ranking_by_rmse": [
+    "lstm",
+    "climatology",
+    "persistence",
+    "linear_regression",
+    "train_mean"
+  ]
+}
