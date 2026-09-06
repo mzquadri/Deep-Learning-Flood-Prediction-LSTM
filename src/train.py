@@ -9,17 +9,18 @@ Implements:
 - Training history logging
 """
 
-import os
 import json
+import os
 import time
+
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from model import FloodLSTM
 from dataset import load_and_split
+from model import FloodLSTM
 
 
 def train_model(
@@ -84,7 +85,9 @@ def train_model(
     scaler_dir = os.path.join(output_dir, "scalers")
 
     # Load data
-    train_loader, val_loader, test_loader, info = load_and_split(
+    # The test split is built here but deliberately not touched during
+    # training. src/experiment.py is the only place it is scored.
+    train_loader, val_loader, _test_loader, info = load_and_split(
         csv_path, seq_len=seq_len, batch_size=batch_size, scaler_dir=scaler_dir
     )
 

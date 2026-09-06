@@ -8,15 +8,14 @@ Handles:
 - Feature normalization (StandardScaler)
 """
 
+import os
+
+import joblib
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
-from typing import Tuple, Dict
-import os
-import joblib
-
+from torch.utils.data import DataLoader, Dataset
 
 FEATURE_COLS = ["precipitation_mm", "temperature_c", "soil_moisture_pct"]
 TARGET_COL = "discharge_m3s"
@@ -61,7 +60,7 @@ def load_and_split(
     val_frac: float = 0.15,
     batch_size: int = 64,
     scaler_dir: str | None = None,
-) -> Tuple[DataLoader, DataLoader, DataLoader, Dict]:
+) -> tuple[DataLoader, DataLoader, DataLoader, dict]:
     """
     Load CSV, normalize, create sequences, and return DataLoaders.
 
@@ -147,6 +146,6 @@ def load_and_split(
     }
 
     print(
-        f"Dataset splits — Train: {len(train_ds)}, Val: {len(val_ds)}, Test: {len(test_ds)}"
+        f"Dataset splits, train: {len(train_ds)}, Val: {len(val_ds)}, Test: {len(test_ds)}"
     )
     return train_loader, val_loader, test_loader, info
