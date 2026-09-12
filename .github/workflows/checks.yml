@@ -32,11 +32,14 @@ jobs:
 
       - name: The generator is deterministic and the benchmark reproduces
         # Regenerates the data from seed 42 and re-scores the committed
-        # checkpoint against every baseline. A change in any published number
-        # fails here rather than in the README.
+        # checkpoint against every baseline. experiment.py overwrites
+        # results/benchmark.json and exits 0 whatever it finds, so on its own it
+        # proves nothing; check_reference_run.py is what compares the fresh
+        # result against the committed one and fails on a difference.
         run: |
           python src/generate_data.py
           python src/experiment.py
+          python scripts/check_reference_run.py
 
       - name: Figures regenerate
         run: python scripts/figures/generate_figures.py

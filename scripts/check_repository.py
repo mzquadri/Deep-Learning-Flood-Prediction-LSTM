@@ -1,8 +1,14 @@
 """Verify the versioned artifacts this experiment advertises.
 
 Cheap by design: it confirms the tracked source and result files exist and that
-the benchmark JSON parses and still agrees with the README's headline claim. It
-does not regenerate data or retrain, so it stays usable as a quick check.
+every number the README publishes is still the number the recorded run produced.
+It does not regenerate data or retrain, so it stays usable as a quick check.
+For the stronger statement, that a fresh run still lands on those numbers, see
+scripts/check_reference_run.py.
+
+Each claim below is derived from results/benchmark.json and then looked for in
+the README, formatted to the precision the README prints. No number is typed in
+twice, so this file cannot disagree with the benchmark on its own.
 """
 
 import json
@@ -31,6 +37,55 @@ REQUIRED = (
     "docs/diagrams/pipeline.svg",
 )
 
+# The names the README gives the baselines, so a failure message points at the
+# row a reader would look for rather than at a dictionary key.
+LABELS = {
+    "lstm": "LSTM",
+    "climatology": "day-of-year mean",
+    "persistence": "persistence",
+    "linear_regression": "linear regression",
+    "train_mean": "train mean",
+}
+
+
+def claims(bench: dict) -> list[tuple[str, str]]:
+    """Every published number, as (what it is, how the README prints it)."""
+    out: list[tuple[str, str]] = []
+
+    # The results table: five methods, three metrics each, three decimals.
+    for key, label in LABELS.items():
+        row = bench["test_metrics"][key]
+        for metric in ("rmse", "mae", "r2"):
+            out.append((f"the {label} {metric.upper()}", f"{row[metric]:.3f}"))
+
+    lstm_r2 = bench["test_metrics"]["lstm"]["r2"]
+    clim_r2 = bench["test_metrics"]["climatology"]["r2"]
+
+    out.append(("the noise ceiling on R2", f"{bench['noise_ceiling_r2']:.3f}"))
+    # The gap between the model and a lookup table of calendar-day means is the
+    # README's central claim about how much the network is actually worth, and
+    # it is a subtraction, so it can go stale while both of its inputs stay right.
+    out.append(("the margin over the calendar", f"{lstm_r2 - clim_r2:.3f}"))
+
+    out.append(("the combined seasonal share of variance",
+                f"{bench['seasonal_combined_share'] * 100:.0f}%"))
+    out.append(("the rain-driven share of variance",
+                f"{bench['variance_share']['quickflow'] * 100:.1f}%"))
+    out.append(("the share of days soil moisture sits at its floor",
+                f"{bench['data']['soil_moisture_at_floor_fraction'] * 100:.0f}%"))
+
+    # The event detection table, and the threshold it is computed at.
+    detection = bench["event_detection"]
+    for key in ("lstm", "persistence", "climatology", "linear_regression"):
+        row = detection[key]
+        for metric in ("precision", "recall", "f1"):
+            out.append((f"the {LABELS[key]} {metric}", f"{row[metric]:.3f}"))
+    out.append(("the event threshold", f"{detection['lstm']['threshold_m3s']:.2f}"))
+
+    out.append(("the number of scored rows", str(bench["split"]["scored_rows"])))
+    out.append(("the parameter count", f"{bench['model']['parameters']:,}"))
+    return out
+
 
 def main() -> int:
     missing = [path for path in REQUIRED if not (ROOT / path).is_file()]
@@ -40,20 +95,15 @@ def main() -> int:
     bench = json.loads((ROOT / "results" / "benchmark.json").read_text(encoding="utf-8"))
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-    # The one claim worth guarding here: the README must not quote a score the
-    # recorded run does not contain, and must not drop the baseline it is
-    # compared against.
-    problems = []
-    for name in ("lstm", "climatology"):
-        value = f"{bench['test_metrics'][name]['r2']:.3f}"
-        if value not in readme:
-            problems.append(f"README does not state the {name} R2 of {value}")
+    checked = claims(bench)
+    problems = [f"README does not state {what} of {value}"
+                for what, value in checked if value not in readme]
     if problems:
         raise SystemExit("README disagrees with results/benchmark.json:\n"
-                         + "\n".join(problems))
+                         + "\n".join(f"  - {p}" for p in problems))
 
     print(f"Repository check passed: {len(REQUIRED)} artifacts present, "
-          f"README matches results/benchmark.json.")
+          f"{len(checked)} published numbers match results/benchmark.json.")
     return 0
 
 

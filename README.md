@@ -156,8 +156,24 @@ python -m pytest -q
 python scripts/check_repository.py
 ```
 
-The check confirms the artifacts exist and that this README still states the same
-scores as the recorded run, so the two cannot drift apart quietly.
+That check confirms the artifacts exist and that every number quoted in this
+README still match `results/benchmark.json`, so the text and the recorded run
+cannot drift apart quietly.
+
+It compares the README against the stored result, not against a fresh one.
+`src/experiment.py` overwrites `results/benchmark.json` whenever it runs, so
+rerunning it would replace the record rather than contradict it. The stronger
+check is therefore separate:
+
+```bash
+python src/generate_data.py
+python src/experiment.py
+python scripts/check_reference_run.py
+```
+
+That regenerates the data from seed 42, re-scores the committed checkpoint, and
+compares the result field by field against the copy committed at `HEAD`,
+ignoring only the run timestamp and torch build. CI runs both.
 
 ## Limitations
 
