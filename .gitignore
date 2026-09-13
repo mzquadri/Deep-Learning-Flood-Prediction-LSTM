@@ -28,3 +28,8 @@ Thumbs.db
 data/*.csv
 
 # Model weights (keep in results for this project)
+
+# The fitted scalers. train.py writes them, and nothing in this repository reads
+# them back: every entry point refits them from the seeded data in under a
+# second, so the committed copies were a pair of pickle files with no consumer.
+results/scalers/

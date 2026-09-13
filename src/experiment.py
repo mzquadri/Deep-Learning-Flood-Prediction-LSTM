@@ -58,7 +58,8 @@ def lstm_predictions(info, seq_len: int, hparams: dict):
         num_layers=hparams["num_layers"],
         dropout=hparams["dropout"],
     )
-    state = torch.load(os.path.join(RESULTS, "best_model.pt"), map_location="cpu")
+    state = torch.load(os.path.join(RESULTS, "best_model.pt"), map_location="cpu",
+                       weights_only=True)
     model.load_state_dict(state)
     model.eval()
 

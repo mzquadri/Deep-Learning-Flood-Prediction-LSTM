@@ -157,8 +157,25 @@ python scripts/check_repository.py
 ```
 
 That check confirms the artifacts exist and that every number quoted in this
-README still match `results/benchmark.json`, so the text and the recorded run
-cannot drift apart quietly.
+README still matches `results/benchmark.json`, so the text and the recorded run
+cannot drift apart quietly. It also checks two things about the run itself.
+
+The figures are held to the run they came from. Each one records a digest of
+`results/benchmark.json` and of `results/best_model.pt` in its own file, because
+every figure here reloads the checkpoint and recomputes the held-out predictions
+rather than only reading numbers out of the benchmark. Comparing the images byte
+for byte would not work, and that is measured rather than assumed: `torch` is
+deliberately a lower bound in `requirements.txt`, and rendering this set under
+2.14.0+cpu instead of the 2.11.0+xpu that produced it reproduces four of the five
+files exactly and changes `04_error_analysis.png`, which plots residuals at a
+resolution where a last-bit difference in the forward pass moves a point. Every
+number in the benchmark is identical between those two builds.
+
+And the run has to be internally consistent, whatever the numbers are. The noise
+ceiling must equal one minus the noise share of the target's variance, no method
+may score above it, and the two seasonal terms must combine to more than the sum
+of their separate shares, which is what makes the 77% worth quoting rather than
+the 49.7% those shares add to. None of that depends on the README being right.
 
 It compares the README against the stored result, not against a fresh one.
 `src/experiment.py` overwrites `results/benchmark.json` whenever it runs, so
@@ -174,6 +191,23 @@ python scripts/check_reference_run.py
 That regenerates the data from seed 42, re-scores the committed checkpoint, and
 compares the result field by field against the copy committed at `HEAD`,
 ignoring only the run timestamp and torch build. CI runs both.
+
+## What is committed, and how it is loaded
+
+`results/best_model.pt` is the trained checkpoint and is committed, so the
+published scores can be reproduced without retraining. Both places that load it
+pass `weights_only=True`: the file is a plain state dictionary of twelve tensors,
+208,513 parameters in total, and restricting the load means a checkpoint cannot
+carry anything but weights. That matters because `requirements.txt` accepts
+`torch>=2.1`, and the versions before 2.6 unpickle without restriction by default.
+
+The fitted scalers are not committed. `src/train.py` writes them beside the
+checkpoint, and nothing in this repository reads them back: every entry point
+refits them from the seeded data in well under a second, so the committed copies
+were two pickle files with no consumer. They remain reachable in the git history,
+as removing a file from the tree does not remove it from the repository, and that
+history is not rewritten for an artifact that holds nothing but two means and two
+standard deviations.
 
 ## Limitations
 
