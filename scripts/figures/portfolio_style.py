@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import json
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+
+#: tEXt key holding digests of the inputs a figure was drawn from.
+DRAWN_FROM_KEY = "DrawnFrom"
 
 PAPER = "#FFFFFF"
 INK = "#111827"
@@ -84,8 +89,29 @@ def footnote(fig, lines, *, y: float = 0.085, x: float = 0.065, size: float = 9.
             print(f"    caption overflows the canvas: {line[:60]}...")
 
 
-def save(fig, out_dir, name: str) -> None:
+def save(fig, out_dir, name: str, *, drawn_from: dict | None = None) -> None:
+    """Write the figure, recording what it was drawn from.
+
+    Every figure here recomputes the held-out predictions by loading
+    results/best_model.pt and running a forward pass, so a figure depends on the
+    checkpoint as well as on results/benchmark.json. `drawn_from` carries a
+    digest of each, in the PNG's tEXt block, and scripts/check_repository.py
+    recomputes them.
+
+    Comparing the images byte for byte would not work, and that is measured
+    rather than assumed: requirements.txt leaves torch as a lower bound because
+    the build differs by accelerator, and rendering this set under 2.14.0+cpu
+    reproduces four of the five files exactly while 04_error_analysis.png
+    differs, because it plots residuals at a resolution where a last-bit
+    difference in the forward pass moves a point. Every number in
+    results/benchmark.json is identical between the two builds.
+
+    matplotlib merges this with its own defaults, so the Software entry naming
+    the version that rendered the file is still written.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_dir / f"{name}.png")
+    metadata = None if drawn_from is None else {
+        DRAWN_FROM_KEY: json.dumps(drawn_from, sort_keys=True)}
+    fig.savefig(out_dir / f"{name}.png", metadata=metadata)
     plt.close(fig)
     print(f"  wrote {name}.png")

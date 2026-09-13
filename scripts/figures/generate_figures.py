@@ -15,6 +15,7 @@ Output: docs/figures/
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -54,6 +55,26 @@ def load_bench() -> dict:
     return json.loads(BENCH.read_text(encoding="utf-8"))
 
 
+def provenance() -> dict:
+    """Digests of the two inputs every figure here depends on.
+
+    Each figure recomputes the held-out predictions from results/best_model.pt,
+    so the checkpoint is an input as much as the benchmark is. The benchmark is
+    digested without its `environment` block, which holds the run timestamp and
+    the torch build: everything else in that file is identical between the two
+    torch builds this has been run under, so excluding it makes the digest
+    describe the result rather than the machine.
+    """
+    bench = json.loads(BENCH.read_text(encoding="utf-8"))
+    bench.pop("environment", None)
+    canonical = json.dumps(bench, sort_keys=True, separators=(",", ":"))
+    return {
+        "benchmark": hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16],
+        "checkpoint": hashlib.sha256(
+            (ROOT / "results" / "best_model.pt").read_bytes()).hexdigest()[:16],
+    }
+
+
 def rebuild_predictions(bench):
     """Recompute the held-out predictions the figures draw."""
     seq_len = bench["split"]["window"]
@@ -61,7 +82,8 @@ def rebuild_predictions(bench):
     _, _, test_loader, info = load_and_split(str(CSV), seq_len=seq_len, batch_size=64)
 
     model = FloodLSTM(input_size=len(FEATURE_COLS), hidden_size=128, num_layers=2, dropout=0.2)
-    model.load_state_dict(torch.load(ROOT / "results" / "best_model.pt", map_location="cpu"))
+    model.load_state_dict(torch.load(ROOT / "results" / "best_model.pt",
+                                 map_location="cpu", weights_only=True))
     model.eval()
     preds, actual = [], []
     with torch.no_grad():
@@ -150,7 +172,7 @@ def fig_generator(df, components, bench):
         "beating, and why a good score on this data is not evidence of "
         "rainfall-runoff skill.",
         "Source: the generator's own components, results/benchmark.json."], y=0.100)
-    ps.save(fig, OUT, "01_signal_composition")
+    ps.save(fig, OUT, "01_signal_composition", drawn_from=provenance())
 
 
 def fig_baselines(bench):
@@ -206,7 +228,7 @@ def fig_baselines(bench):
         "Persistence is shown for context but is not a fair comparison: it uses "
         "yesterday's discharge, and discharge is not one of the model's inputs.",
         "Source: results/benchmark.json."], y=0.100)
-    ps.save(fig, OUT, "02_model_against_baselines")
+    ps.save(fig, OUT, "02_model_against_baselines", drawn_from=provenance())
 
 
 def fig_forecast(truth, preds, dates, bench):
@@ -249,7 +271,7 @@ def fig_forecast(truth, preds, dates, bench):
         "It still under-predicts the sharpest peaks, which is the error pattern the "
         "next figure quantifies.",
         "Source: results/benchmark.json and the seed 42 generator."], y=0.100)
-    ps.save(fig, OUT, "03_held_out_forecast")
+    ps.save(fig, OUT, "03_held_out_forecast", drawn_from=provenance())
 
 
 def fig_errors(truth, preds, bench):
@@ -307,7 +329,7 @@ def fig_errors(truth, preds, bench):
         f"{detect['lstm']['precision']:.2f}. The model misses events more often than "
         f"it invents them.",
         "Source: results/benchmark.json."], y=0.100)
-    ps.save(fig, OUT, "04_error_analysis")
+    ps.save(fig, OUT, "04_error_analysis", drawn_from=provenance())
     return bias_low, bias_high
 
 
@@ -352,7 +374,7 @@ def fig_training(bench):
         f"Trained on {bench['split']['train']} days with a {bench['split']['window']} "
         f"day window, seed {hparams.get('seed')}. Source: "
         f"results/training_history.json.", ], y=0.100)
-    ps.save(fig, OUT, "05_training")
+    ps.save(fig, OUT, "05_training", drawn_from=provenance())
 
 
 def main() -> int:
